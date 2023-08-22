@@ -3,7 +3,7 @@
 /*
 Plugin Name: AMG Event Date Checker
 Description: Checks if the "Dates of Event" from the "Events" CPT has passed and updates the "Date Passed" ACF field.
-Version: 1.2
+Version: 1.2.0
 Author: Kyle Weidner
 */
 
