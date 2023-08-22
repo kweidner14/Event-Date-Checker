@@ -3,7 +3,7 @@
 /*
 Plugin Name: AMG Event Date Checker
 Description: Checks if the "Dates of Event" from the "Events" CPT has passed and updates the "Date Passed" ACF field.
-Version: 1.1
+Version: 1.2
 Author: Kyle Weidner
 */
 
@@ -42,13 +42,10 @@ function check_event_date_passed()
             $event_date_obj = DateTime::createFromFormat('F j, Y', $event_date);
             $current_date_obj = new DateTime(); // Current date
 
-            // Check if the event date has passed, if so set 'date_passed' ACF field to true
+            // Check if the event date has passed
             if ($event_date_obj < $current_date_obj) {
                 update_field('date_passed', 'True', $event_id);
-            }
-
-            // If event date has not passed, set 'date_passed' ACF field to `null` (setting to False does not work)
-            if($event_date_obj >= $current_date_obj) {
+            } else {
                 update_field('date_passed', null, $event_id);
             }
 
@@ -79,3 +76,39 @@ function daily_event_check_deactivation()
 }
 
 register_deactivation_hook(__FILE__, 'daily_event_check_deactivation');
+
+// Function to check if a single event's date has passed upon saving the event
+// Hooks into save_post_{post_type}
+function check_event_date_on_save($post_id) {
+
+    // If this is an autosave, don't update it.
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    // If this isn't an 'events' post, don't update it.
+    if (get_post_type($post_id) != 'events') {
+        return;
+    }
+
+    // Check if ACF functions are available
+    if (!function_exists('get_field') || !function_exists('update_field')) {
+        return;
+    }
+
+    $event_date = get_field('dates_of_event', $post_id);
+
+    // Convert event date to a DateTime object
+    $event_date_obj = DateTime::createFromFormat('F j, Y', $event_date);
+    $current_date_obj = new DateTime(); // Current date
+
+    // Check if the event date has passed
+    if ($event_date_obj < $current_date_obj) {
+        update_field('date_passed', 'True', $post_id);
+    } else {
+        update_field('date_passed', null, $post_id);
+    }
+}
+
+// Hook to save_post action with a lower priority to ensure ACF is loaded
+add_action('save_post', 'check_event_date_on_save', 20);
